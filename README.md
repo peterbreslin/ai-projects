@@ -1,2 +1,2 @@
 # ai-projects
- Some personal projects broadly related to AI.
+Intended to track personal projects broadly related to AI.
