@@ -2,62 +2,114 @@ import numpy as np
 import gymnasium as gym
 import matplotlib.pyplot as plt
 
-# Create the Frozen Lake environment
-env = gym.make("FrozenLake-v1", desc=None, map_name="4x4", is_slippery=False, render_mode="ansi")
 
-# Initialize the Q-table
-qtable = np.zeros((env.observation_space.n, env.action_space.n))
+class FrozenLakeQLearning:
+    def __init__(self, render_mode="ansi", N=1000, alpha=0.5, gamma=0.9):
+        self.env = gym.make(
+            "FrozenLake-v1", 
+            desc=None, 
+            map_name="4x4", 
+            is_slippery=False, 
+            render_mode=render_mode
+        )
+        self.qtable = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.N = N
+        self.alpha = alpha
+        self.gamma = gamma
+        self.render_mode = render_mode
 
-# Hyperparameters
-N = 1000
-alpha = 0.5
-gamma = 0.9
-n_success = 0
 
-# List of outcomes to plot
-outcomes = []
+    def train(self):
+        for episode in range(self.N):
+            state, info = self.env.reset()
 
-print("Q-table before training:\n", qtable)
+            terminated = False
+            while not terminated:
+                # Choose the action with the highest value in the current state
+                if np.max(self.qtable[state]) > 0:
+                    action = np.argmax(self.qtable[state])
+                else:
+                # Random action if the Q-value is 0
+                    action = self.env.action_space.sample()
 
-# Training
-for i in range(N):
-    state, info = env.reset()
-    terminated = False
-    truncated = False
+                # Implement action and move agent
+                new_state, reward, terminated, truncated, info = self.env.step(action)
 
-    # By default, we consider our outcomes to be a failure
-    outcomes.append("Failure")
+                # Update Q(s,a) by the Bellman Equation
+                self.qtable[state, action] = self.qtable[state, action] + self.alpha * (reward + self.gamma * np.max(self.qtable[new_state]) - self.qtable[state, action])
 
-    # Until the agent gets stuck in a hole or reaches the goal, keep training it
-    while not terminated or truncated:
-        # Choose the action with the highest value in the current state
-        if np.max(qtable[state]) > 0:
-            action = np.argmax(qtable[state])
+                # Update the current state
+                state = new_state
+
+
+    def evaluate(self, episodes=100):
+        successs_count = 0
+        for i in range(episodes):
+            state, info = self.env.reset()
+            terminated = False
+
+            while not terminated:
+                if np.max(self.qtable[state]) > 0:
+                    action = np.argmax(self.qtable[state])
+                else:
+                    action = self.env.action_space.sample()
+
+                new_state, reward, terminated, truncated, info = self.env.step(action)
+                state = new_state
+
+                # Count successes
+                if terminated and reward == 1.0:
+                    successs_count += 1
+
+        print (f"Success rate = {(successs_count/episodes)*100}%")
+
+
+    def visualize_trajectory(self):
+        state, info = self.env.reset()
+
+        if self.render_mode == "rgb_array":
+            frame = self.env.render()
+            plt.imshow(frame)
+            plt.axis("off")
         else:
-            action = env.action_space.sample()
+            print(self.env.render())
+        plt.pause(0.5)
+        plt.clf()
 
-        #  Implement this action and move the agent in the desired direction
-        new_state, reward, terminated, truncated, info = env.step(action)
+        sequence = []
+        terminated = False
+        while not terminated:
+            if np.max(self.qtable[state]) > 0:
+                action = np.argmax(self.qtable[state])
+            else:
+                action = self.env.action_space.sample()
 
-        # Update Q(s,a)
-        qtable[state, action] = qtable[state, action] + alpha * (reward + gamma * np.max(qtable[new_state]) - qtable[state, action])
+            sequence.append(action)
+            new_state, reward, terminated, truncated, info = self.env.step(action)
+            state = new_state
 
-        # Update current state
-        state = new_state
+            if self.render_mode == "rgb_array":
+                frame = self.env.render()
+                plt.imshow(frame)
+                plt.axis("off")
+            else:
+                print(self.env.render())
+            plt.pause(0.5)
+            plt.clf()
 
-        # If the agent reaches the goal, mark the outcome as a success
-        if terminated and reward == 1.0:
-            outcomes[-1] = "Success"
-            n_success += 1
+        print(f"Sequence = {sequence}")
 
-print('\n===========================================')
-print (f"\nSuccess rate = {n_success/N*100}%")
-print('Q-table after training:\n', qtable)
+        
+if __name__ == "__main__":
 
-# Plot outcomes
-fig, ax = plt.subplots(1, 1, figsize=(6, 3))
-ax.set_xlabel("Run Number")
-ax.set_ylabel("Outcome")
-ax.set_facecolor('#efeeea')
-ax.bar(range(len(outcomes)), outcomes, color="#0A047A", width=1.0)
-plt.show()
+    # Initialize the Q-Learning agent
+    agent = FrozenLakeQLearning(render_mode = "ansi")
+
+    # Train the agent
+    agent.train()
+
+    # Evaluation
+    agent.evaluate()
+
+    # Visualize the trajectory
+    agent.visualize_trajectory()
