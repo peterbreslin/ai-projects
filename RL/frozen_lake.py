@@ -1,6 +1,13 @@
+import time
 import numpy as np
 import gymnasium as gym
 import matplotlib.pyplot as plt
+
+"""
+Implementing the Q-Learning algorithm to solve the non-slippery FrozenLake environment from the Gymnasium library.
+
+This basic tabular reinforcement learning approach trains the agent with the Q-Learning algorithm, which uses the Bellman Equation to determine and update the Q-values. The agent's performance is then evaluated post-training. Finally, the agent's trajectory is visualized in the environment in either a text-based representation as an ASCII-art grid(render_mode="ansi"), or a graphical representation where each cell of the lake is shown visually (render_mode="rgb_array").
+"""
 
 
 class FrozenLakeQLearning:
@@ -71,10 +78,11 @@ class FrozenLakeQLearning:
             frame = self.env.render()
             plt.imshow(frame)
             plt.axis("off")
+            plt.pause(0.5)
+            plt.clf()
         else:
             print(self.env.render())
-        plt.pause(0.5)
-        plt.clf()
+            time.sleep(0.5)
 
         sequence = []
         terminated = False
@@ -92,10 +100,11 @@ class FrozenLakeQLearning:
                 frame = self.env.render()
                 plt.imshow(frame)
                 plt.axis("off")
+                plt.pause(0.5)
+                plt.clf()
             else:
                 print(self.env.render())
-            plt.pause(0.5)
-            plt.clf()
+                time.sleep(0.5)
 
         print(f"Sequence = {sequence}")
 
@@ -103,7 +112,9 @@ class FrozenLakeQLearning:
 if __name__ == "__main__":
 
     # Initialize the Q-Learning agent
-    agent = FrozenLakeQLearning(render_mode = "ansi")
+    render_mode = "ansi"
+    # render_mode = "rgb_array"
+    agent = FrozenLakeQLearning(render_mode = render_mode)
 
     # Train the agent
     agent.train()
